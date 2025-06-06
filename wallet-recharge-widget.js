@@ -20,9 +20,9 @@
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         },
         text: {
-            title: '💰 Wallet Recharge',
+            title: 'ðŸ’° Wallet Recharge',
             subtitle: 'Choose your preferred amount to add',
-            customAmountLabel: '💳 Custom Amount',
+            customAmountLabel: 'ðŸ’³ Custom Amount',
             rechargeButton: 'Pay Now',
             processingText: 'Processing payment...',
             successMessage: 'Payment completed successfully!',
@@ -304,7 +304,7 @@
 
         getWidgetHTML() {
             const amountOptions = this.config.amounts.map(amount => 
-                `<button class="amount-option" data-amount="${amount}">₹${amount}</button>`
+                `<button class="amount-option" data-amount="${amount}">â‚¹${amount}</button>`
             ).join('');
 
             return `
@@ -445,12 +445,12 @@
             }
             
             if (amount < this.config.minAmount) {
-                this.showError(`Minimum amount is ₹${this.config.minAmount}`);
+                this.showError(`Minimum amount is â‚¹${this.config.minAmount}`);
                 return false;
             }
             
             if (amount > this.config.maxAmount) {
-                this.showError(`Maximum amount is ₹${this.config.maxAmount}`);
+                this.showError(`Maximum amount is â‚¹${this.config.maxAmount}`);
                 return false;
             }
             
@@ -502,7 +502,7 @@
                 amount: amount * 100, // Convert to paise
                 currency: this.config.currency,
                 name: 'Wallet Recharge',
-                description: `Add ₹${amount} to wallet`,
+                description: `Add â‚¹${amount} to wallet`,
                 handler: (response) => {
                     this.handlePaymentSuccess(response);
                 },
