@@ -356,17 +356,28 @@
                 </div>
             `;
         }
+        resetAmountSelection() {
+            this.selectedAmount = null;
+            this.customAmount = '';
+            this.clearAmountSelection();
+            this.overlay.querySelector('.custom-amount-input').value = '';
+            this.hideError();
+        }
 
         bindEvents() {
             // Close button
             this.overlay.querySelector('.wallet-widget-close').addEventListener('click', () => {
                 this.close();
+               this.resetAmountSelection();
+
             });
 
             // Click outside to close
             this.overlay.addEventListener('click', (e) => {
                 if (e.target === this.overlay) {
                     this.close();
+                    this.resetAmountSelection();
+
                 }
             });
 
