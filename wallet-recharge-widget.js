@@ -6,6 +6,20 @@
 (function(window, document) {
     'use strict';
 
+    // Currency symbols map
+    const CURRENCY_SYMBOLS = {
+        'INR': '₹',
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'JPY': '¥',
+        'AUD': 'A$',
+        'CAD': 'C$',
+        'SGD': 'S$',
+        'AED': 'د.إ',
+        'SAR': '﷼'
+    };
+
     // Default configuration
     const DEFAULT_CONFIG = {
         apiKey: null,
@@ -20,9 +34,9 @@
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         },
         text: {
-            title: 'ðŸ’° Wallet Recharge',
+            title: '💰 Wallet Recharge',
             subtitle: 'Choose your preferred amount to add',
-            customAmountLabel: 'ðŸ’³ Custom Amount',
+            customAmountLabel: '💳 Custom Amount',
             rechargeButton: 'Pay Now',
             processingText: 'Processing payment...',
             successMessage: 'Payment completed successfully!',
@@ -35,7 +49,7 @@
         }
     };
 
-    // CSS Styles
+    // CSS Styles (unchanged)
     const CSS_STYLES = `
         .wallet-widget-overlay {
             position: fixed;
@@ -265,6 +279,9 @@
             this.isProcessing = false;
             this.overlay = null;
             this.widget = null;
+            
+            // Get currency symbol
+            this.currencySymbol = CURRENCY_SYMBOLS[this.config.currency] || this.config.currency;
 
             this.init();
         }
@@ -304,7 +321,7 @@
 
         getWidgetHTML() {
             const amountOptions = this.config.amounts.map(amount => 
-                `<button class="amount-option" data-amount="${amount}">â‚¹${amount}</button>`
+                `<button class="amount-option" data-amount="${amount}">${this.currencySymbol}${amount}</button>`
             ).join('');
 
             return `
@@ -445,12 +462,12 @@
             }
             
             if (amount < this.config.minAmount) {
-                this.showError(`Minimum amount is â‚¹${this.config.minAmount}`);
+                this.showError(`Minimum amount is ${this.currencySymbol}${this.config.minAmount}`);
                 return false;
             }
             
             if (amount > this.config.maxAmount) {
-                this.showError(`Maximum amount is â‚¹${this.config.maxAmount}`);
+                this.showError(`Maximum amount is ${this.currencySymbol}${this.config.maxAmount}`);
                 return false;
             }
             
@@ -499,10 +516,10 @@
         openRazorpayCheckout(amount) {
             const options = {
                 key: this.config.apiKey,
-                amount: amount * 100, // Convert to paise
+                amount: amount * 100, // Convert to smallest currency unit
                 currency: this.config.currency,
                 name: 'Wallet Recharge',
-                description: `Add â‚¹${amount} to wallet`,
+                description: `Add ${this.currencySymbol}${amount} to wallet`,
                 handler: (response) => {
                     this.handlePaymentSuccess(response);
                 },
