@@ -279,7 +279,8 @@
             this.isProcessing = false;
             this.overlay = null;
             this.widget = null;
-            
+            this.customData = config.customData || {}; // Add custom data support
+
             // Get currency symbol
             this.currencySymbol = CURRENCY_SYMBOLS[this.config.currency] || this.config.currency;
 
@@ -504,27 +505,34 @@
 
             const amount = this.getSelectedAmount();
             this.setProcessing(true);
+            // Add the selected amount to custom data
+            const checkoutData = {
+                ...this.customData,
+                widgetAmount: amount,
+                widgetCurrency: this.config.currency,
+                timestamp: new Date().toISOString()
+            };
             
-            this.initializeRazorpay(amount);
+            this.initializeRazorpay(amount, checkoutData);
         }
 
-        initializeRazorpay(amount) {
+        initializeRazorpay(amount,customData) {
             // Load Razorpay script if not already loaded
             if (!window.Razorpay) {
                 const script = document.createElement('script');
                 script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-                script.onload = () => this.openRazorpayCheckout(amount);
+                script.onload = () => this.openRazorpayCheckout(amount,customData);
                 script.onerror = () => {
                     this.setProcessing(false);
                     this.showError('Failed to load payment gateway');
                 };
                 document.head.appendChild(script);
             } else {
-                this.openRazorpayCheckout(amount);
+                this.openRazorpayCheckout(amount,customData);
             }
         }
 
-        openRazorpayCheckout(amount) {
+        openRazorpayCheckout(amount,customData) {
             const options = {
                 key: this.config.apiKey,
                 amount: amount * 100, // Convert to smallest currency unit
@@ -532,7 +540,7 @@
                 name: 'Wallet Recharge',
                 description: `Add ${this.currencySymbol}${amount} to wallet`,
                 handler: (response) => {
-                    this.handlePaymentSuccess(response);
+                    this.handlePaymentSuccess(response,customData);
                 },
                 modal: {
                     ondismiss: () => {
@@ -544,13 +552,21 @@
                 },
                 theme: {
                     color: this.config.theme.primaryColor
+                },
+                 // Add custom data to the order (will be returned in webhook and response)
+                notes: customData,
+                // Alternative method - add to prefill (if you need it in the checkout form)
+                prefill: {
+                    ...(customData.email && { email: customData.email }),
+                    ...(customData.contact && { contact: customData.contact }),
+                    ...(customData.name && { name: customData.name })
                 }
             };
 
             try {
                 const rzp = new Razorpay(options);
                 rzp.on('payment.failed', (response) => {
-                    this.handlePaymentFailure(response);
+                    this.handlePaymentFailure(response,customData);
                 });
                 rzp.open();
             } catch (error) {
@@ -559,15 +575,19 @@
             }
         }
 
-        handlePaymentSuccess(response) {
+        handlePaymentSuccess(response,customData) {
             this.setProcessing(false);
             this.showStatus(this.config.text.successMessage, 'success');
             
             if (this.config.callbacks.onSuccess) {
                 this.config.callbacks.onSuccess({
                     paymentId: response.razorpay_payment_id,
+                    orderId: response.razorpay_order_id,
+                    signature: response.razorpay_signature,
                     amount: this.getSelectedAmount(),
-                    currency: this.config.currency
+                    currency: this.config.currency,
+                    customData: customData // Include the custom data in the response
+
                 });
             }
 
@@ -577,14 +597,18 @@
             }, 2000);
         }
 
-        handlePaymentFailure(response) {
+        handlePaymentFailure(response,customData) {
             this.setProcessing(false);
             this.showStatus(this.config.text.errorMessage, 'error');
             
             if (this.config.callbacks.onFailure) {
                 this.config.callbacks.onFailure({
                     error: response.error,
-                    amount: this.getSelectedAmount()
+                   code: response.error.code,
+                    amount: this.getSelectedAmount(),
+                    description: response.error.description,
+                    amount: this.getSelectedAmount(),
+                    customData: customData // Include the custom data in the failure response
                 });
             }
         }
